@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 
 #include <PCProcess.h>
 #include <Event.h>
@@ -19,6 +20,11 @@ Process::cb_ret_t on_thread_create(Event::const_ptr ev)
 
 int main(int argc, char** argv)
 {
+    if (argc < 2) {
+	cout << "Usage: " << argv[0] << " program [args]\n";
+	exit(1);
+    }
+
     vector<string> args;
 
     string exec = argv[1];

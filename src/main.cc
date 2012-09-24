@@ -11,10 +11,9 @@ using namespace std;
 
 Process::cb_ret_t on_thread_create(Event::const_ptr ev)
 {
-    EventNewThread::const_ptr new_thread_ev = ev->getEventNewThread();
-    Thread::const_ptr new_thread = new_thread_ev->getNewThread();
+    EventSyscall::const_ptr new_thread_ev = ev->getEventSyscall();
 
-    cout << "New thread LWP " << new_thread->getLWP() << endl;
+    cout << "Syscall " << new_thread_ev->getSyscallNumber() << endl;
     return Process::cbDefault;
 }
 
@@ -33,7 +32,14 @@ int main(int argc, char** argv)
     }
     Process::ptr proc = Process::createProcess(exec, args);
 
-    Process::registerEventCallback(EventType::ThreadCreate, on_thread_create);
+    Process::registerEventCallback(EventType::Syscall, on_thread_create);
+
+    ThreadPool & threads = proc->threads();
+    for (ThreadPool::iterator thread = threads.begin();
+	 thread != threads.end(); ++thread)
+    {
+	(*thread)->setSyscallMode(true);
+    }
 
     proc->continueProc();
     while (!proc->isTerminated()) {

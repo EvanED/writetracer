@@ -2,6 +2,8 @@
 
 env = Environment()
 
+env.AppendUnique(CCFLAGS=["-Wall", "-Wextra"])
+
 env.AppendUnique(CPPPATH=["/opt/dyninst/include"])
 env.AppendUnique(LIBPATH=["/opt/dyninst/lib"])
 env.AppendUnique(RPATH=["/opt/dyninst/lib"])

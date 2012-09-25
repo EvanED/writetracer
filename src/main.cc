@@ -23,6 +23,8 @@ handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
     default:
 	return Process::cbDefault;
     }
+
+    (void) syscall;
 }
 
 
@@ -44,7 +46,7 @@ int main(int argc, char** argv)
     vector<string> args;
 
     string exec = argv[1];
-    for (unsigned i=1; i<argc; ++i) {
+    for (int i=1; i<argc; ++i) {
 	args.push_back(argv[i]);
     }
     Process::ptr proc = Process::createProcess(exec, args);

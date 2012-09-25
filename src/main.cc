@@ -1,9 +1,11 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <cassert>
 
 #include <PCProcess.h>
 #include <Event.h>
+#include <dyn_regs.h>
 
 #include <sys/syscall.h>
 
@@ -15,9 +17,22 @@ using namespace std;
 Process::cb_ret_t
 handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
 {
+    Thread::const_ptr thread = syscall->getThread();
+
+    MachRegisterVal rdi, rsi, rdx, rcx, r8, r9;
+    bool ok = true
+	&& thread->getRegister(x86_64::rdi, rdi)
+	&& thread->getRegister(x86_64::rsi, rsi)
+	&& thread->getRegister(x86_64::rdx, rdx)
+	&& thread->getRegister(x86_64::rcx, rcx)
+	&& thread->getRegister(x86_64::r8, r8)
+	&& thread->getRegister(x86_64::r9, r9);
+
+    assert(ok);
+
     switch (syscall_no) {
     case SYS_write:
-	std::cout << "write()";
+	std::cout << "write(" << rdi << ", " << rsi << ", " << rdx << ")\n";
 	return Process::cbDefault;
 
     default:

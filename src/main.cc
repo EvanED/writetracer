@@ -5,6 +5,8 @@
 #include <PCProcess.h>
 #include <Event.h>
 
+#include <sys/syscall.h>
+
 using namespace Dyninst;
 using namespace ProcControlAPI;
 using namespace std;
@@ -13,7 +15,9 @@ Process::cb_ret_t on_thread_create(Event::const_ptr ev)
 {
     EventSyscall::const_ptr new_thread_ev = ev->getEventSyscall();
 
-    cout << "Syscall " << new_thread_ev->getSyscallNumber() << endl;
+    if (new_thread_ev->getSyscallNumber() == SYS_write) {
+	cout << "Syscall " << new_thread_ev->getSyscallNumber() << endl;
+    }
     return Process::cbDefault;
 }
 

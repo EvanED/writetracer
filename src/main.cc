@@ -15,6 +15,16 @@ using namespace std;
 
 
 Process::cb_ret_t
+handle_write(int fd,
+	     void const * buf,
+	     size_t count)
+{
+    std::cout << "write(" << fd << ", " << buf << ", " << count << ")\n";
+    return Process::cbDefault;
+}
+
+
+Process::cb_ret_t
 handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
 {
     Thread::const_ptr thread = syscall->getThread();
@@ -27,13 +37,11 @@ handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
 	&& thread->getRegister(x86_64::rcx, rcx)
 	&& thread->getRegister(x86_64::r8, r8)
 	&& thread->getRegister(x86_64::r9, r9);
-
     assert(ok);
 
     switch (syscall_no) {
     case SYS_write:
-	std::cout << "write(" << rdi << ", " << rsi << ", " << rdx << ")\n";
-	return Process::cbDefault;
+	return handle_write(rdi, reinterpret_cast<void*>(rsi), rdx);
 
     default:
 	return Process::cbDefault;

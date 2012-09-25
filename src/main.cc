@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include <cassert>
+#include <sstream>
 
 #include <PCProcess.h>
 #include <Event.h>
@@ -13,13 +14,42 @@ using namespace Dyninst;
 using namespace ProcControlAPI;
 using namespace std;
 
+std::string
+escape(char const * data)
+{
+    std::string s;
+    while (*data) {
+	if (*data >= 0x20) {
+	    s.push_back(*data);
+	}
+	else {
+	    s.push_back('\\');
+	    s.push_back('x');
+	    stringstream val;
+	    cout << "*data is [" << *data << "]; in hex, " << ios::hex << static_cast<int>(*data) << "\n";
+	    val << ios::hex << static_cast<int>(*data);
+	    s += val.str();
+	}
+	++data;
+    }
+    return s;
+}
+
 
 Process::cb_ret_t
-handle_write(int fd,
-	     void const * buf,
+handle_write(EventSyscall::const_ptr syscall,
+	     int fd,
+	     MachRegisterVal buf,
 	     size_t count)
 {
-    std::cout << "write(" << fd << ", " << buf << ", " << count << ")\n";
+    Process::const_ptr process = syscall->getProcess();
+
+    char * data = new char[count+1];
+    data[count] = '\0';
+    bool ok = process->readMemory(data, buf, count);
+    assert(ok);
+
+    std::cout << "write(" << fd << ", " << buf << " [" << escape(data) << "], " << count << ")\n";
     return Process::cbDefault;
 }
 
@@ -41,7 +71,7 @@ handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
 
     switch (syscall_no) {
     case SYS_write:
-	return handle_write(rdi, reinterpret_cast<void*>(rsi), rdx);
+	return handle_write(syscall, rdi, rsi, rdx);
 
     default:
 	return Process::cbDefault;

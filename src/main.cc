@@ -40,7 +40,8 @@ Process::cb_ret_t
 handle_write(EventSyscall::const_ptr syscall,
 	     int fd,
 	     MachRegisterVal buf,
-	     size_t count)
+	     size_t count,
+	     ssize_t return_maybe)
 {
     Process::const_ptr process = syscall->getProcess();
 
@@ -49,7 +50,15 @@ handle_write(EventSyscall::const_ptr syscall,
     bool ok = process->readMemory(data, buf, count);
     assert(ok);
 
-    std::cout << "write(" << fd << ", " << buf << " [" << escape(data) << "], " << count << ")\n";
+    std::cout << "write(" << fd << ", "
+	      << buf << " [" << escape(data) << "], "
+	      << count << ")";
+
+    if (syscall->getEventType().time() == EventType::Post) {
+	std::cout << " => " << return_maybe;
+    }
+
+    std::cout << "\n";
     return Process::cbDefault;
 }
 
@@ -59,8 +68,9 @@ handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
 {
     Thread::const_ptr thread = syscall->getThread();
 
-    MachRegisterVal rdi, rsi, rdx, rcx, r8, r9;
+    MachRegisterVal rax, rdi, rsi, rdx, rcx, r8, r9;
     bool ok = true
+	&& thread->getRegister(x86_64::rax, rax)
 	&& thread->getRegister(x86_64::rdi, rdi)
 	&& thread->getRegister(x86_64::rsi, rsi)
 	&& thread->getRegister(x86_64::rdx, rdx)
@@ -71,7 +81,7 @@ handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
 
     switch (syscall_no) {
     case SYS_write:
-	return handle_write(syscall, rdi, rsi, rdx);
+	return handle_write(syscall, rdi, rsi, rdx, rax);
 
     default:
 	return Process::cbDefault;

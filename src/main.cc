@@ -11,14 +11,27 @@ using namespace Dyninst;
 using namespace ProcControlAPI;
 using namespace std;
 
+
+Process::cb_ret_t
+handle_syscall(int syscall_no, EventSyscall::const_ptr syscall)
+{
+    switch (syscall_no) {
+    case SYS_write:
+	std::cout << "write()";
+	return Process::cbDefault;
+
+    default:
+	return Process::cbDefault;
+    }
+}
+
+
+
 Process::cb_ret_t on_thread_create(Event::const_ptr ev)
 {
     EventSyscall::const_ptr new_thread_ev = ev->getEventSyscall();
-
-    if (new_thread_ev->getSyscallNumber() == SYS_write) {
-	cout << "Syscall " << new_thread_ev->getSyscallNumber() << endl;
-    }
-    return Process::cbDefault;
+    return handle_syscall(new_thread_ev->getSyscallNumber(), new_thread_ev);
+    //return Process::cbDefault;
 }
 
 int main(int argc, char** argv)

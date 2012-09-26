@@ -8,6 +8,8 @@
 #include <PCProcess.h>
 #include <Event.h>
 #include <dyn_regs.h>
+#include <Symtab.h>
+#include <procstate.h>
 
 #include <walker.h>
 #include <frame.h>
@@ -17,9 +19,68 @@
 using namespace Dyninst;
 using namespace ProcControlAPI;
 using namespace Stackwalker;
+using namespace SymtabAPI;
 using namespace std;
 
 Process::ptr proc;
+
+#define printMsg(ign, f, l, args, ...)
+
+#define BUFSIZE 1000
+
+namespace {
+    pair<string, int>
+    get_source_info(Walker *proc, Address addr)
+    {
+        assert(proc != NULL);
+        
+        LibraryState *libState = proc->getProcessState()->getLibraryTracker();
+        if (!libState) {
+            printMsg(STAT_WARNING, __FILE__, __LINE__, "Failed to get LibraryState\n");
+            return make_pair("", 0);
+        }
+       
+        LibAddrPair lib;
+        if (!libState->getLibraryAtAddr(addr, lib)) {
+            printMsg(STAT_WARNING, __FILE__, __LINE__, "Failed to get library at address 0x%lx\n", addr);
+            return make_pair("", 0);
+        }
+
+
+        Symtab *symtab;
+        if (!Symtab::openFile(symtab, lib.first) || symtab == NULL) {
+            printMsg(STAT_WARNING, __FILE__, __LINE__, "Symtab failed to open file %s\n", lib.first.c_str());
+            return make_pair("", 0);
+        }
+        symtab->setTruncateLinePaths(false);
+    
+        Address loadAddr = lib.second;
+        vector<LineNoTuple *> lines;    
+        if (!symtab->getSourceLines(lines, addr - loadAddr)) {
+            return make_pair("", 0);
+        }
+
+        assert(lines.size() == 1u);
+        return make_pair(lines[0]->getFile(), lines[0]->getLine());
+    }
+
+
+    std::string
+    function_name(Frame const & frame)
+    {
+        std::string name;
+        frame.getName(name);
+        return name;
+    }
+
+
+    Address
+    address(Frame const & frame)
+    {
+        return frame.getRA();
+    }
+}
+
 
 void
 output_stacktrace(Process::ptr process)
@@ -29,9 +90,11 @@ output_stacktrace(Process::ptr process)
     assert(walker);
     walker->walkStack(stackwalk);
     for (unsigned i=0; i<stackwalk.size(); i++) {
-	string s;
-	stackwalk[i].getName(s);
-	cout << "    " << s << endl;
+	std::string name = function_name(stackwalk[i]);
+	Address ad = address(stackwalk[i]);
+	pair<string, int> src = get_source_info(walker, ad);
+
+	std::cout << "  " << name << ": " << src.first << ":" << src.second << "\n";
     }
 }
 

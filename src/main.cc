@@ -38,6 +38,7 @@ namespace {
 	       (string, file_name)
 	       (int, line))
 
+
     pair<string, int>
     get_source_info(Walker *proc, Address addr)
     {

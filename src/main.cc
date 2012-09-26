@@ -16,6 +16,8 @@
 
 #include <sys/syscall.h>
 
+#include "stl_to_json.hh"
+
 using namespace Dyninst;
 using namespace ProcControlAPI;
 using namespace Stackwalker;
@@ -29,6 +31,13 @@ Process::ptr proc;
 #define BUFSIZE 1000
 
 namespace {
+#define DEF_STRUCT STL_TO_JSON_DEFINE_SERIALIZED_STRUCT
+    DEF_STRUCT(StackFrame,
+	       (unsigned long, address)
+	       (string, function_name)
+	       (string, file_name)
+	       (int, line))
+
     pair<string, int>
     get_source_info(Walker *proc, Address addr)
     {
@@ -90,11 +99,15 @@ output_stacktrace(Process::ptr process)
     assert(walker);
     walker->walkStack(stackwalk);
     for (unsigned i=0; i<stackwalk.size(); i++) {
-	std::string name = function_name(stackwalk[i]);
-	Address ad = address(stackwalk[i]);
-	pair<string, int> src = get_source_info(walker, ad);
+        StackFrame f;
+        f.address = address(stackwalk[i]);
+        f.function_name = function_name(stackwalk[i]);
 
-	std::cout << "  " << name << ": " << src.first << ":" << src.second << "\n";
+        pair<string, int> src = get_source_info(walker, f.address);
+        f.file_name = src.first;
+        f.line = src.second;
+
+        serialize(cout, f);
     }
 }
 

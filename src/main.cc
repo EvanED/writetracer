@@ -8,11 +8,31 @@
 #include <Event.h>
 #include <dyn_regs.h>
 
+#include <walker.h>
+#include <frame.h>
+
 #include <sys/syscall.h>
 
 using namespace Dyninst;
 using namespace ProcControlAPI;
+using namespace Stackwalker;
 using namespace std;
+
+Process::ptr proc;
+
+void
+output_stacktrace(Process::ptr process)
+{
+    std::vector<Frame> stackwalk;
+    Walker *walker = Walker::newWalker(process);
+    assert(walker);
+    walker->walkStack(stackwalk);
+    for (unsigned i=0; i<stackwalk.size(); i++) {
+	string s;
+	stackwalk[i].getName(s);
+	cout << "    " << s << endl;
+    }
+}
 
 std::string
 escape(char const * data)
@@ -59,6 +79,10 @@ handle_write(EventSyscall::const_ptr syscall,
     }
 
     std::cout << "\n";
+
+    assert(process == proc);
+    output_stacktrace(proc);
+
     return Process::cbDefault;
 }
 
@@ -112,7 +136,7 @@ int main(int argc, char** argv)
     for (int i=1; i<argc; ++i) {
 	args.push_back(argv[i]);
     }
-    Process::ptr proc = Process::createProcess(exec, args);
+    proc = Process::createProcess(exec, args);
 
     Process::registerEventCallback(EventType::Syscall, on_thread_create);
 

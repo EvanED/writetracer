@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <sstream>
+#include <iomanip>
 
 #include <PCProcess.h>
 #include <Event.h>
@@ -46,8 +47,8 @@ escape(char const * data)
 	    s.push_back('\\');
 	    s.push_back('x');
 	    stringstream val;
-	    cout << "*data is [" << *data << "]; in hex, " << ios::hex << static_cast<int>(*data) << "\n";
-	    val << ios::hex << static_cast<int>(*data);
+	    val.setf(ios::hex);
+	    val << static_cast<int>(*data);
 	    s += val.str();
 	}
 	++data;
@@ -71,7 +72,7 @@ handle_write(EventSyscall::const_ptr syscall,
     assert(ok);
 
     std::cout << "write(" << fd << ", "
-	      << buf << " [" << escape(data) << "], "
+	      << reinterpret_cast<void*>(buf) << " [" << escape(data) << "], "
 	      << count << ")";
 
     if (syscall->getEventType().time() == EventType::Post) {

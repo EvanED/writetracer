@@ -96,6 +96,7 @@ void
 output_stacktrace(Process::ptr process)
 {
     std::vector<Frame> stackwalk;
+    std::vector<StackFrame> json_stacktrace;
     Walker *walker = Walker::newWalker(process);
     assert(walker);
     walker->walkStack(stackwalk);
@@ -107,9 +108,11 @@ output_stacktrace(Process::ptr process)
         pair<string, int> src = get_source_info(walker, f.address);
         f.file_name = src.first;
         f.line = src.second;
-
-        serialize(cout, f);
+        json_stacktrace.push_back(f);
     }
+
+    stl_to_json::serialize(cout, json_stacktrace);
+    cout << "\n";
 }
 
 std::string

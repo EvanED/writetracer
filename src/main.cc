@@ -16,7 +16,7 @@
 
 #include <sys/syscall.h>
 
-#include "stl_to_json.hh"
+#include <jsonwriter/writer.hh>
 
 using namespace Dyninst;
 using namespace ProcControlAPI;
@@ -31,7 +31,7 @@ Process::ptr proc;
 #define BUFSIZE 1000
 
 namespace {
-#define DEF_STRUCT STL_TO_JSON_DEFINE_SERIALIZED_STRUCT
+#define DEF_STRUCT JSONWRITER_DEFINE_SERIALIZED_STRUCT
     DEF_STRUCT(StackFrame,
 	       (unsigned long, address)
 	       (string, function_name)
@@ -111,7 +111,7 @@ output_stacktrace(Process::ptr process)
         json_stacktrace.push_back(f);
     }
 
-    stl_to_json::serialize(cout, json_stacktrace);
+    jsonwriter::serialize(cout, json_stacktrace);
     cout << "\n";
 }
 

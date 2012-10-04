@@ -94,6 +94,27 @@ namespace {
     }
 
 
+    string
+    fd_filename(pid_t pid, int fd)
+    {
+        int const buff_size = 1000;
+        char buff[buff_size+1];
+        
+        std::stringstream ss;
+        ss << "/proc/" << pid << "/fd/" << fd;
+        ssize_t sz = readlink(ss.str().c_str(), buff, buff_size);
+        if (sz >= 0) {
+            buff[sz] = '\0';
+            return buff;
+        }
+        else {
+            // error
+            assert(false);
+            return "";
+        }
+    }
+
+
     off_t
     ftell_process(pid_t pid, int fd)
     {
@@ -173,7 +194,7 @@ handle_write(EventSyscall::const_ptr syscall,
     bool ok = process->readMemory(data, buf, count);
     assert(ok);
 
-    std::cout << "write(" << fd << ", "
+    std::cout << "write(" << fd << " [" << fd_filename(process->getPid(), fd) << "], "
 	      << reinterpret_cast<void*>(buf) << " [" << escape(data) << "], "
 	      << count << ")";
 

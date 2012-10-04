@@ -4,6 +4,7 @@
 #include <cassert>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 
 #include <PCProcess.h>
 #include <Event.h>
@@ -31,6 +32,8 @@ Process::ptr proc;
 #define BUFSIZE 1000
 
 namespace {
+    off_t ftell_process(pid_t pid, int fd);
+
 #define DEF_STRUCT JSONWRITER_DEFINE_SERIALIZED_STRUCT
     DEF_STRUCT(StackFrame,
 	       (unsigned long, address)
@@ -89,11 +92,31 @@ namespace {
     {
         return frame.getRA();
     }
+
+
+    off_t
+    ftell_process(pid_t pid, int fd)
+    {
+        std::stringstream filename;
+        filename << "/proc/" << pid << "/fdinfo/" << fd;
+
+        std::ifstream fdinfo(filename.str().c_str());
+        assert(fdinfo.good());
+        
+        std::string dummy_pos;
+        fdinfo >> dummy_pos;
+        assert(dummy_pos == "pos:");
+
+        off_t offset;
+        fdinfo >> offset;
+
+        return offset;
+    }
 }
 
 
-void
-output_stacktrace(Process::ptr process)
+std::vector<StackFrame>
+get_stacktrace(Process::ptr process)
 {
     std::vector<Frame> stackwalk;
     std::vector<StackFrame> json_stacktrace;
@@ -111,8 +134,7 @@ output_stacktrace(Process::ptr process)
         json_stacktrace.push_back(f);
     }
 
-    jsonwriter::serialize(cout, json_stacktrace);
-    cout << "\n";
+    return json_stacktrace;
 }
 
 std::string
@@ -159,10 +181,13 @@ handle_write(EventSyscall::const_ptr syscall,
 	std::cout << " => " << return_maybe;
     }
 
-    std::cout << "\n";
+    std::cout << " [pos: " << ftell_process(process->getPid(), fd) << "]\n";
 
     assert(process == proc);
-    output_stacktrace(proc);
+    std::vector<StackFrame> trace = get_stacktrace(proc);
+
+    jsonwriter::serialize(cout, trace);
+    cout << "\n";
 
     return Process::cbDefault;
 }

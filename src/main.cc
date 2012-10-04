@@ -35,7 +35,7 @@ namespace {
     off_t ftell_process(pid_t pid, int fd);
 
 #define DEF_STRUCT JSONWRITER_DEFINE_SERIALIZED_STRUCT
-    DEF_STRUCT(StackFrame,
+    DEF_STRUCT(JsonStackFrame,
 	       (unsigned long, address)
 	       (string, function_name)
 	       (string, file_name)
@@ -136,16 +136,16 @@ namespace {
 }
 
 
-std::vector<StackFrame>
+std::vector<JsonStackFrame>
 get_stacktrace(Process::ptr process)
 {
     std::vector<Frame> stackwalk;
-    std::vector<StackFrame> json_stacktrace;
+    std::vector<JsonStackFrame> json_stacktrace;
     Walker *walker = Walker::newWalker(process);
     assert(walker);
     walker->walkStack(stackwalk);
     for (unsigned i=0; i<stackwalk.size(); i++) {
-        StackFrame f;
+        JsonStackFrame f;
         f.address = address(stackwalk[i]);
         f.function_name = function_name(stackwalk[i]);
 
@@ -205,7 +205,7 @@ handle_write(EventSyscall::const_ptr syscall,
     std::cout << " [pos: " << ftell_process(process->getPid(), fd) << "]\n";
 
     assert(process == proc);
-    std::vector<StackFrame> trace = get_stacktrace(proc);
+    std::vector<JsonStackFrame> trace = get_stacktrace(proc);
 
     jsonwriter::serialize(cout, trace);
     cout << "\n";

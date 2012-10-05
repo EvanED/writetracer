@@ -202,10 +202,6 @@ handle_write(EventSyscall::const_ptr syscall,
     bool ok = process->readMemory(data, buf, count);
     assert(ok);
 
-    //std::cout << "write(" << fd << " [" << fd_filename(process->getPid(), fd) << "], "
-    //	      << reinterpret_cast<void*>(buf) << " [" << escape(data) << "], "
-    //	      << count << ")";
-
     if (syscall->getEventType().time() == EventType::Post) {
         JsonWriteReport report;
         report.target_file = fd_filename(process->getPid(), fd);
@@ -216,7 +212,6 @@ handle_write(EventSyscall::const_ptr syscall,
         cout << "\n";
     }
 
-    //std::cout << " [pos: " << ftell_process(process->getPid(), fd) << "]\n";
     return Process::cbDefault;
 }
 

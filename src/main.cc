@@ -41,6 +41,13 @@ namespace {
 	       (string, file_name)
 	       (int, line))
 
+    DEF_STRUCT(JsonWriteReport,
+               (string, target_file)
+               (long long, write_size)
+               (long long, end_position)
+               (std::vector<JsonStackFrame>, stack_trace))
+
+
 
     pair<string, int>
     get_source_info(Walker *proc, Address addr)
@@ -188,28 +195,28 @@ handle_write(EventSyscall::const_ptr syscall,
 	     ssize_t return_maybe)
 {
     Process::const_ptr process = syscall->getProcess();
+    assert(process == proc);
 
     char * data = new char[count+1];
     data[count] = '\0';
     bool ok = process->readMemory(data, buf, count);
     assert(ok);
 
-    std::cout << "write(" << fd << " [" << fd_filename(process->getPid(), fd) << "], "
-	      << reinterpret_cast<void*>(buf) << " [" << escape(data) << "], "
-	      << count << ")";
+    //std::cout << "write(" << fd << " [" << fd_filename(process->getPid(), fd) << "], "
+    //	      << reinterpret_cast<void*>(buf) << " [" << escape(data) << "], "
+    //	      << count << ")";
 
     if (syscall->getEventType().time() == EventType::Post) {
-	std::cout << " => " << return_maybe;
+        JsonWriteReport report;
+        report.target_file = fd_filename(process->getPid(), fd);
+        report.write_size = return_maybe;
+        report.end_position = ftell_process(process->getPid(), fd);
+        report.stack_trace = get_stacktrace(proc);
+        serialize(cout, report);
+        cout << "\n";
     }
 
-    std::cout << " [pos: " << ftell_process(process->getPid(), fd) << "]\n";
-
-    assert(process == proc);
-    std::vector<JsonStackFrame> trace = get_stacktrace(proc);
-
-    jsonwriter::serialize(cout, trace);
-    cout << "\n";
-
+    //std::cout << " [pos: " << ftell_process(process->getPid(), fd) << "]\n";
     return Process::cbDefault;
 }
 

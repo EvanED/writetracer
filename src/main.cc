@@ -267,6 +267,11 @@ int main(int argc, char** argv)
     }
     proc = Process::createProcess(exec, args);
 
+    if (!proc) {
+	std::cerr << "Error: " << getLastErrorMsg() << "\n";
+	return 1;
+    }
+
     Process::registerEventCallback(EventType::Syscall, on_thread_create);
 
     ThreadPool & threads = proc->threads();

@@ -26,6 +26,7 @@ using namespace SymtabAPI;
 using namespace std;
 
 Process::ptr proc;
+ofstream trace_file;
 
 #define printMsg(ign, f, l, args, ...)
 
@@ -208,7 +209,7 @@ handle_write(EventSyscall::const_ptr syscall,
         report.write_size = return_maybe;
         report.end_position = ftell_process(process->getPid(), fd);
         report.stack_trace = get_stacktrace(proc);
-        serialize(cout, report);
+        serialize(trace_file, report);
         cout << "\n";
     }
 
@@ -258,6 +259,9 @@ int main(int argc, char** argv)
 	cout << "Usage: " << argv[0] << " program [args]\n";
 	exit(1);
     }
+
+    trace_file.open(".trace");
+    assert(trace_file.good());
 
     vector<string> args;
 

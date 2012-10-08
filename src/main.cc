@@ -257,6 +257,7 @@ int main(int argc, char** argv)
 {
     if (argc < 2) {
 	cout << "Usage: " << argv[0] << " program [args]\n";
+	cout << "Usage: " << argv[0] << " program [args]\n";
 	exit(1);
     }
 

@@ -46,6 +46,7 @@ namespace {
                (string, target_file)
                (long long, write_size)
                (long long, end_position)
+               (string, contents)
                (std::vector<JsonStackFrame>, stack_trace))
 
 
@@ -208,6 +209,7 @@ handle_write(EventSyscall::const_ptr syscall,
         report.target_file = fd_filename(process->getPid(), fd);
         report.write_size = return_maybe;
         report.end_position = ftell_process(process->getPid(), fd);
+        report.contents = data;
         report.stack_trace = get_stacktrace(proc);
         serialize(trace_file, report);
         cout << "\n";

@@ -56,17 +56,24 @@
     (erase-buffer)
     choice))
 
-(defun contents-ify ()
+(defun enter-trace-view-mode ()
   (interactive)
   (beginning-of-buffer)
   (let* ((trace (parse-buffer))
 	 (files (get-list-of-files trace))
 	 (subject (car files))
 	 )
+    (set (make-local-variable 'trace-view-orig-text) (buffer-string))
     (erase-buffer)
     (if (not (equal 1 (length files)))
 	(setq subject (get-file-of-interest files))
       nil)
     (display-chunks-for-file trace subject)
     ))
+
+(defun exit-trace-view-mode ()
+  (interactive)
+  (erase-buffer)
+  (insert trace-view-orig-text))
+
 
